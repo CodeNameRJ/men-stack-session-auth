@@ -3,6 +3,10 @@ dotenv.config();
 const express = require("express");
 const app = express();
 const authController = require("./controllers/auth.js");
+const session = require('express-session');
+const MongoStore = require("connect-mongo");
+
+
 
 
 const mongoose = require("mongoose");
@@ -25,6 +29,18 @@ app.use(methodOverride("_method"));
 // Morgan for logging HTTP requests
 app.use(morgan('dev'));
 
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGODB_URI,
+    })
+  })
+);
+
+
 // authController for handling requests that match the /auth URL
 app.use("/auth", authController);
 
@@ -32,10 +48,24 @@ app.use("/auth", authController);
 
 // GET /
 app.get("/", async (req, res) => {
-    res.render("index.ejs");
+    res.render("index.ejs", {
+      user: req.session.user,
+    });
   });
 
 
+//VIP route
+
+app.get('/vip-lounge', (req, res) => {
+  if (req.session.user) {
+    res.send(`Welcome to the party ${req.session.user.username}`)
+
+  } else {
+    res.send('Sorry, no guest allow')
+
+  }
+
+})
 
 
 
